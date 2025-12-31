@@ -26,22 +26,28 @@ pub fn read_xml() {
         match reader.read_event_into(&mut buf) {
             Err(e) => panic!("Error at position {}: {:?}", reader.error_position(), e),
             Ok(Event::Eof) => break,
-            Ok(Event::Start(e)) => println!("found {:?}", e.name()),
-            Ok(Event::End(_)) => println!("found end"),
+            Ok(Event::Start(e)) => {
+                // Start tag (with attributes) <tag attr="value">
+                println!("found {:?}", e.name());
+            }
+            Ok(Event::End(_)) => {
+                // End tag </tag>
+                println!("found end");
+            }
             Ok(Event::Empty(e)) => {
+                // Empty element tag (with attributes) <tag attr="value" />
                 println!("---- empty begin");
                 dbg!(e);
                 println!("---- empty end");
             }
-
             Ok(Event::Decl(_)) => {} // can be skipped
-            // Other events are not expected in our DB
-            Ok(Event::Text(_)) => panic!("found text"),
-            Ok(Event::CData(_)) => panic!("found cdata"),
-            Ok(Event::Comment(_)) => panic!("found comment"),
-            Ok(Event::PI(_)) => panic!("found pi"),
-            Ok(Event::DocType(_)) => panic!("found doctype"),
-            Ok(Event::GeneralRef(_)) => panic!("found generalref"),
+            // Other events are not expected in our DB so just panic
+            Ok(Event::Text(_)) => unreachable!("found text"),
+            Ok(Event::CData(_)) => unreachable!("found cdata"),
+            Ok(Event::Comment(_)) => unreachable!("found comment"),
+            Ok(Event::PI(_)) => unreachable!("found pi"),
+            Ok(Event::DocType(_)) => unreachable!("found doctype"),
+            Ok(Event::GeneralRef(_)) => unreachable!("found generalref"),
         }
     }
 
