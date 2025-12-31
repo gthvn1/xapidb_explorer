@@ -54,64 +54,42 @@ pub fn read_xml() -> DbNode {
             Ok(Event::Eof) => break,
             Ok(Event::Start(e)) => {
                 // Start tag (with attributes) <tag attr="value">
+                // We are only interesting by <table>
                 println!("---- [start] begin ");
                 let name = str::from_utf8(e.name().as_ref()).unwrap().to_string();
-                let mut attrs = BTreeMap::new();
-
-                for attr in e.attributes() {
-                    let attr = attr.unwrap();
+                if name == "table" {
+                    // A table has only a name as attribute
+                    let attr = e.attributes().next().unwrap().unwrap();
                     let key_bytes = attr.key.as_ref();
                     let key = str::from_utf8(key_bytes).expect("invalid utf8 key");
                     let value = attr
                         .unescape_value()
                         .expect("failed to unescape value")
                         .into_owned();
-                    attrs.insert(key.to_string(), value.to_string()).unwrap();
-                }
-                match name.as_str() {
-                    "table" => {
-                        // We are expecting to have only root in stack
-                        assert!(stack.len() == 1);
 
-                        // push it on the stack
-                        stack.push(DbNode {
-                            name: "table".to_string(),
-                            attributes: attrs,
-                            children: Vec::new(),
-                        });
-                    }
-                    "row" => {
-                        let row = DbNode {
-                            name: "row".to_string(),
-                            attributes: attrs,
-                            children: Vec::new(),
-                        };
-
-                        // Attach the row to the last node of the stack
-                        stack.last_mut().unwrap().children.push(row);
-                    }
-                    "manifest" | "database" => {}
-                    name => unreachable!("node {} is not expected", name),
+                    // We can add table in vec
+                    stack.push(DbNode {
+                        name: "table".to_string(),
+                        attributes: BTreeMap::from([(key.to_string(), value)]),
+                        children: Vec::new(),
+                    });
                 }
-                dbg!(&e);
                 println!("---- [start] end");
             }
-            Ok(Event::End(_)) => {
+            Ok(Event::End(e)) => {
                 // End tag </tag>
-                stack.pop();
-            }
-            Ok(Event::Empty(e)) => {
-                // Empty element tag (with attributes) <tag attr="value" />
-                let name = str::from_utf8(e.name().as_ref())
-                    .expect("invald utf8 name")
-                    .to_string();
-                println!("---- [empty] begin -> {}", name);
+                // As we are only pushing table on the stack, we are also only popping table
+                let name = str::from_utf8(e.name().as_ref()).unwrap().to_string();
                 if name == "table" {
                     let node = stack.pop().unwrap();
                     // Add the node to the last node of the stack that we are expecting to be root
                     assert!(stack.len() == 1);
                     stack.last_mut().unwrap().children.push(node);
                 }
+            }
+            Ok(Event::Empty(_e)) => {
+                // Empty element tag (with attributes) <tag attr="value" />
+                println!("---- [empty] begin");
                 println!("---- [empty] end");
             }
             Ok(Event::Decl(_)) => {} // can be skipped
