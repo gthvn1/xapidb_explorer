@@ -1,3 +1,5 @@
+use xapidb_explorer::xapidb::parser;
+
 fn main() {
-    println!("Hello, world!");
+    parser::read_xml();
 }
