@@ -1,5 +1,6 @@
-use xapidb_explorer::xapidb::parser;
+use xapidb_explorer::xapidb::parser::DbNode;
 
 fn main() {
-    parser::read_xml();
+    let root = DbNode::read_xml();
+    root.print_tree();
 }
