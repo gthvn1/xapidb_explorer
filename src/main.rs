@@ -1,6 +1,6 @@
 use xapidb_explorer::xapidb::parser::DbNode;
 
-use crossterm::event::{self, Event};
+use crossterm::event::{self, Event, KeyCode};
 
 use ratatui::{
     Frame,
@@ -23,32 +23,48 @@ fn main() {
         Row::new(vec!["Cell31", "Cell32", "Cell33"]),
     ];
 
-    let widths = [
-        Constraint::Length(5),
-        Constraint::Length(5),
-        Constraint::Length(10),
-    ];
-
-    let table = Table::new(rows, widths)
-        .block(Block::new().title("Table"))
-        .row_highlight_style(Style::new().reversed())
-        .highlight_symbol(">>");
-
     let mut terminal = ratatui::init();
 
     loop {
         terminal
-            .draw(|frame| draw(frame, &table, &mut table_state))
+            .draw(|frame| draw(frame, &rows, &mut table_state))
             .expect("Failed to draw frame");
-        if matches!(event::read().expect("failed to read event"), Event::Key(_)) {
-            break;
+
+        match event::read().expect("failed to read event") {
+            Event::Key(key) => match key.code {
+                KeyCode::Up => {
+                    let i = table_state.selected().unwrap_or(0);
+                    if i > 0 {
+                        table_state.select(Some(i - 1));
+                    }
+                }
+                KeyCode::Down => {
+                    let i = table_state.selected().unwrap_or(0);
+                    if i + 1 < rows.len() {
+                        table_state.select(Some(i + 1));
+                    }
+                }
+                KeyCode::Esc | KeyCode::Char('q') => break,
+                _ => todo!("handle key"),
+            },
+            _ => {}
         }
     }
 
     ratatui::restore();
 }
 
-fn draw(frame: &mut Frame, table: &Table, state: &mut TableState) {
+fn draw(frame: &mut Frame, rows: &[Row], state: &mut TableState) {
+    let widths = [
+        Constraint::Length(5),
+        Constraint::Length(5),
+        Constraint::Length(10),
+    ];
+
+    let table = Table::new(rows.to_vec(), widths)
+        .block(Block::new().title("Table"))
+        .row_highlight_style(Style::new().reversed())
+        .highlight_symbol(">>");
     let area = frame.area();
     frame.render_stateful_widget(table, area, state);
 }
