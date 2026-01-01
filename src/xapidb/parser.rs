@@ -89,13 +89,20 @@ pub fn read_xml() -> DbNode {
                 // Empty element tag (with attributes) <tag attr="value" />
                 // Here we need to just add table to root and row to attribute table
                 let name = str::from_utf8(e.name().as_ref()).unwrap().to_string();
-                let attr = e.attributes().next().unwrap().unwrap();
-                let key_bytes = attr.key.as_ref();
-                let key = str::from_utf8(key_bytes).expect("invalid utf8 key");
-                let value = attr
-                    .unescape_value()
-                    .expect("failed to unescape value")
-                    .into_owned();
+                let mut attributes = BTreeMap::new();
+
+                for attr in e.attributes() {
+                    let attr = attr.unwrap();
+                    let key_bytes = attr.key.as_ref();
+                    let key = str::from_utf8(key_bytes).expect("invalid utf8 key");
+                    let value = attr
+                        .unescape_value()
+                        .expect("failed to unescape value")
+                        .into_owned();
+                    attributes.insert(key.to_string(), value);
+                }
+
+                dbg!(&e);
 
                 match name.as_str() {
                     "table" => {
@@ -104,18 +111,19 @@ pub fn read_xml() -> DbNode {
                         assert!(stack.len() == 1);
                         stack.last_mut().unwrap().children.push(DbNode {
                             name: "table".to_string(),
-                            attributes: BTreeMap::from([(key.to_string(), value)]),
+                            attributes,
                             children: Vec::new(),
                         });
                     }
                     "row" => {
                         // Here we are expecting root AND a table in stack
+                        // Create a row node with all attributes and add it as children of the table
                         assert!(stack.len() == 2);
-                        stack
-                            .last_mut()
-                            .unwrap()
-                            .attributes
-                            .insert(key.to_string(), value);
+                        stack.last_mut().unwrap().children.push(DbNode {
+                            name: "row".to_string(),
+                            attributes,
+                            children: Vec::new(),
+                        });
                     }
                     _ => {} // ignore everything else
                 }
