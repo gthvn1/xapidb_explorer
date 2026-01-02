@@ -41,6 +41,8 @@ impl Default for App {
                     "Tab2 Row 1".to_string(),
                     "Tab2 Row 2".to_string(),
                     "Tab2 Row 3".to_string(),
+                    "Tab2 Row 4".to_string(),
+                    "Tab2 Row 5".to_string(),
                 ],
             },
         ];
@@ -100,7 +102,12 @@ impl App {
                     self.rows_state.select(Some(0));
                 }
             }
-            Focus::Rows => todo!("select above rows"),
+            Focus::Rows => {
+                let i = self.rows_state.selected().unwrap();
+                if i > 0 {
+                    self.rows_state.select(Some(i - 1));
+                }
+            }
         }
     }
 
@@ -113,7 +120,16 @@ impl App {
                     self.rows_state.select(Some(0));
                 }
             }
-            Focus::Rows => todo!("select below rows"),
+            Focus::Rows => {
+                let i = self.rows_state.selected().unwrap();
+                let table = self
+                    .tables
+                    .get(self.tables_state.selected().unwrap())
+                    .unwrap();
+                if i < table.rows.len() {
+                    self.rows_state.select(Some(i + 1));
+                }
+            }
         }
     }
 
