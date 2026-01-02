@@ -136,13 +136,19 @@ impl App {
 
     fn draw_rows(&mut self, frame: &mut Frame, area: Rect) {
         // We get the row according to the selected table
-        // let rows = self
-        //     .tables
-        //     .get(self.tables_state.selected().unwrap())
-        //     .map(|t| &t.rows)
-        //     .unwrap();
+        let rows = self
+            .root
+            .children
+            .get(self.tables_state.selected().unwrap())
+            .map(|c| &c.children)
+            .unwrap();
 
-        let items: Vec<ListItem> = Vec::new();
+        // TODO: currently we just print the name that is "row" for all rows.
+        //       Find a better way to print rows.
+        let items: Vec<ListItem> = rows
+            .iter()
+            .map(|r| ListItem::new(r.name.as_str()))
+            .collect();
 
         let block = Block::bordered()
             .title("Rows")
