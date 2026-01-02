@@ -1,30 +1,53 @@
 use ratatui::{
     DefaultTerminal, Frame,
     crossterm::event::{self, Event, KeyCode, KeyEvent},
-    style::Style,
+    layout::{Constraint, Direction, Layout, Rect},
     widgets::{Block, List, ListItem, ListState},
 };
 
+struct Table {
+    name: String,
+    rows: Vec<String>,
+}
 pub struct App {
     should_exit: bool,
-    items: Vec<String>,
-    state: ListState,
+    tables: Vec<Table>,
+    tables_state: ListState,
+    rows_state: ListState,
 }
 
 impl Default for App {
     fn default() -> Self {
         // https://docs.rs/ratatui/latest/ratatui/widgets/struct.List.html
-        let items = vec![
-            "Item 1".to_string(),
-            "Item 2".to_string(),
-            "Item 3".to_string(),
+        let tables = vec![
+            Table {
+                name: "Table 1".to_string(),
+                rows: vec![
+                    "Tab1 Row 1".to_string(),
+                    "Tab1 Row 2".to_string(),
+                    "Tab1 Row 3".to_string(),
+                ],
+            },
+            Table {
+                name: "Table 2".to_string(),
+                rows: vec![
+                    "Tab2 Row 1".to_string(),
+                    "Tab2 Row 2".to_string(),
+                    "Tab2 Row 3".to_string(),
+                ],
+            },
         ];
-        let mut state = ListState::default();
-        state.select(Some(0));
+        let mut tables_state = ListState::default();
+        tables_state.select(Some(0));
+
+        let mut rows_state = ListState::default();
+        rows_state.select(Some(0));
+
         Self {
             should_exit: false,
-            items,
-            state,
+            tables,
+            tables_state,
+            rows_state,
         }
     }
 }
@@ -32,7 +55,7 @@ impl Default for App {
 impl App {
     pub fn run(mut self, mut terminal: DefaultTerminal) -> color_eyre::Result<()> {
         while !self.should_exit {
-            terminal.draw(|frame| draw(frame, &self.items, &mut self.state))?;
+            terminal.draw(|frame| draw(frame, &mut self))?;
             if let Event::Key(key) = event::read().unwrap() {
                 self.handle_key(key)?;
             };
@@ -53,29 +76,58 @@ impl App {
     }
 
     fn select_above(&mut self) {
-        let i = self.state.selected().unwrap_or(0);
+        let i = self.tables_state.selected().unwrap();
         if i > 0 {
-            self.state.select(Some(i - 1));
+            self.tables_state.select(Some(i - 1));
+            self.rows_state.select(Some(0));
         }
     }
 
     fn select_below(&mut self) {
-        let i = self.state.selected().unwrap_or(0);
-        if i + 1 < self.items.len() {
-            self.state.select(Some(i + 1));
+        let i = self.tables_state.selected().unwrap();
+        if i < self.tables.len() {
+            self.tables_state.select(Some(i + 1));
+            self.rows_state.select(Some(0));
         }
     }
 }
 
-fn draw(frame: &mut Frame, items: &[String], state: &mut ListState) {
-    let list_items: Vec<ListItem> = items.iter().map(|s| ListItem::new(s.as_str())).collect();
-    let list = List::new(list_items)
-        .block(Block::bordered().title("List"))
-        .style(Style::new().white())
-        .highlight_style(Style::new().italic())
-        .highlight_symbol(">>")
-        .repeat_highlight_symbol(true);
-
+fn draw(frame: &mut Frame, app: &mut App) {
     let area = frame.area();
-    frame.render_stateful_widget(list, area, state);
+    let chunks = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([Constraint::Percentage(30), Constraint::Percentage(70)])
+        .split(area);
+
+    draw_tables(frame, app, chunks[0]);
+    draw_rows(frame, app, chunks[1]);
+}
+
+fn draw_tables(frame: &mut Frame, app: &mut App, area: Rect) {
+    let items: Vec<ListItem> = app
+        .tables
+        .iter()
+        .map(|t| ListItem::new(t.name.as_str()))
+        .collect();
+    let list = List::new(items)
+        .block(Block::bordered().title("Tables"))
+        .highlight_symbol(">> ");
+
+    frame.render_stateful_widget(list, area, &mut app.tables_state);
+}
+
+fn draw_rows(frame: &mut Frame, app: &mut App, area: Rect) {
+    let rows = app
+        .tables
+        .get(app.tables_state.selected().unwrap())
+        .map(|t| &t.rows)
+        .unwrap();
+
+    let items: Vec<ListItem> = rows.iter().map(|r| ListItem::new(r.as_str())).collect();
+
+    let list = List::new(items)
+        .block(Block::bordered().title("Rows"))
+        .highlight_symbol(">> ");
+
+    frame.render_stateful_widget(list, area, &mut app.rows_state);
 }

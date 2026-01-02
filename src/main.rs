@@ -8,7 +8,7 @@ fn main() -> color_eyre::Result<()> {
     color_eyre::install()?;
 
     let root = DbNode::read_xml();
-    root.print_tree();
+    dbg!(root);
 
     let terminal = ratatui::init();
     let ret = App::default().run(terminal);
