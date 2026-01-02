@@ -32,10 +32,7 @@ impl Default for App {
 impl App {
     pub fn run(mut self, mut terminal: DefaultTerminal) -> color_eyre::Result<()> {
         while !self.should_exit {
-            terminal
-                .draw(|frame| draw(frame, &self.items, &mut self.state))
-                .expect("Failed to draw frame");
-
+            terminal.draw(|frame| draw(frame, &self.items, &mut self.state))?;
             if let Event::Key(key) = event::read().unwrap() {
                 self.handle_key(key)?;
             };
@@ -46,23 +43,27 @@ impl App {
 
     fn handle_key(&mut self, key: KeyEvent) -> color_eyre::Result<()> {
         match key.code {
-            KeyCode::Up => {
-                let i = self.state.selected().unwrap_or(0);
-                if i > 0 {
-                    self.state.select(Some(i - 1));
-                }
-            }
-            KeyCode::Down => {
-                let i = self.state.selected().unwrap_or(0);
-                if i + 1 < self.items.len() {
-                    self.state.select(Some(i + 1));
-                }
-            }
+            KeyCode::Up => self.select_above(),
+            KeyCode::Down => self.select_below(),
             KeyCode::Esc | KeyCode::Char('q') => self.should_exit = true,
             _ => todo!("handle key"),
         }
 
         Ok(())
+    }
+
+    fn select_above(&mut self) {
+        let i = self.state.selected().unwrap_or(0);
+        if i > 0 {
+            self.state.select(Some(i - 1));
+        }
+    }
+
+    fn select_below(&mut self) {
+        let i = self.state.selected().unwrap_or(0);
+        if i + 1 < self.items.len() {
+            self.state.select(Some(i + 1));
+        }
     }
 }
 
