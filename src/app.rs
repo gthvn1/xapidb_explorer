@@ -2,8 +2,14 @@ use ratatui::{
     DefaultTerminal, Frame,
     crossterm::event::{self, Event, KeyCode, KeyEvent},
     layout::{Constraint, Direction, Layout, Rect},
+    style::{Color, Style},
     widgets::{Block, List, ListItem, ListState},
 };
+
+enum Focus {
+    Tables,
+    Rows,
+}
 
 struct Table {
     name: String,
@@ -14,6 +20,7 @@ pub struct App {
     tables: Vec<Table>,
     tables_state: ListState,
     rows_state: ListState,
+    focus: Focus,
 }
 
 impl Default for App {
@@ -48,6 +55,7 @@ impl Default for App {
             tables,
             tables_state,
             rows_state,
+            focus: Focus::Tables,
         }
     }
 }
@@ -66,6 +74,7 @@ impl App {
 
     fn handle_key(&mut self, key: KeyEvent) -> color_eyre::Result<()> {
         match key.code {
+            KeyCode::Tab => self.toggle_focus(),
             KeyCode::Up => self.select_above(),
             KeyCode::Down => self.select_below(),
             KeyCode::Esc | KeyCode::Char('q') => self.should_exit = true,
@@ -75,19 +84,36 @@ impl App {
         Ok(())
     }
 
+    fn toggle_focus(&mut self) {
+        self.focus = match self.focus {
+            Focus::Tables => Focus::Rows,
+            Focus::Rows => Focus::Tables,
+        };
+    }
+
     fn select_above(&mut self) {
-        let i = self.tables_state.selected().unwrap();
-        if i > 0 {
-            self.tables_state.select(Some(i - 1));
-            self.rows_state.select(Some(0));
+        match self.focus {
+            Focus::Tables => {
+                let i = self.tables_state.selected().unwrap();
+                if i > 0 {
+                    self.tables_state.select(Some(i - 1));
+                    self.rows_state.select(Some(0));
+                }
+            }
+            Focus::Rows => todo!("select above rows"),
         }
     }
 
     fn select_below(&mut self) {
-        let i = self.tables_state.selected().unwrap();
-        if i < self.tables.len() {
-            self.tables_state.select(Some(i + 1));
-            self.rows_state.select(Some(0));
+        match self.focus {
+            Focus::Tables => {
+                let i = self.tables_state.selected().unwrap();
+                if i < self.tables.len() {
+                    self.tables_state.select(Some(i + 1));
+                    self.rows_state.select(Some(0));
+                }
+            }
+            Focus::Rows => todo!("select below rows"),
         }
     }
 }
@@ -109,14 +135,21 @@ fn draw_tables(frame: &mut Frame, app: &mut App, area: Rect) {
         .iter()
         .map(|t| ListItem::new(t.name.as_str()))
         .collect();
-    let list = List::new(items)
-        .block(Block::bordered().title("Tables"))
-        .highlight_symbol(">> ");
+
+    let block = Block::bordered()
+        .title("Tables")
+        .border_style(match app.focus {
+            Focus::Tables => Style::default().fg(Color::Yellow),
+            Focus::Rows => Style::default(),
+        });
+
+    let list = List::new(items).block(block).highlight_symbol(">> ");
 
     frame.render_stateful_widget(list, area, &mut app.tables_state);
 }
 
 fn draw_rows(frame: &mut Frame, app: &mut App, area: Rect) {
+    // We get the row according to the selected table
     let rows = app
         .tables
         .get(app.tables_state.selected().unwrap())
@@ -125,9 +158,14 @@ fn draw_rows(frame: &mut Frame, app: &mut App, area: Rect) {
 
     let items: Vec<ListItem> = rows.iter().map(|r| ListItem::new(r.as_str())).collect();
 
-    let list = List::new(items)
-        .block(Block::bordered().title("Rows"))
-        .highlight_symbol(">> ");
+    let block = Block::bordered()
+        .title("Rows")
+        .border_style(match app.focus {
+            Focus::Rows => Style::default().fg(Color::Yellow),
+            Focus::Tables => Style::default(),
+        });
+
+    let list = List::new(items).block(block).highlight_symbol(">> ");
 
     frame.render_stateful_widget(list, area, &mut app.rows_state);
 }
