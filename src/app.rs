@@ -63,7 +63,7 @@ impl Default for App {
 impl App {
     pub fn run(mut self, mut terminal: DefaultTerminal) -> color_eyre::Result<()> {
         while !self.should_exit {
-            terminal.draw(|frame| draw(frame, &mut self))?;
+            terminal.draw(|frame| self.draw(frame))?;
             if let Event::Key(key) = event::read().unwrap() {
                 self.handle_key(key)?;
             };
@@ -116,56 +116,56 @@ impl App {
             Focus::Rows => todo!("select below rows"),
         }
     }
-}
 
-fn draw(frame: &mut Frame, app: &mut App) {
-    let area = frame.area();
-    let chunks = Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([Constraint::Percentage(30), Constraint::Percentage(70)])
-        .split(area);
+    fn draw(&mut self, frame: &mut Frame) {
+        let area = frame.area();
+        let chunks = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([Constraint::Percentage(30), Constraint::Percentage(70)])
+            .split(area);
 
-    draw_tables(frame, app, chunks[0]);
-    draw_rows(frame, app, chunks[1]);
-}
+        self.draw_tables(frame, chunks[0]);
+        self.draw_rows(frame, chunks[1]);
+    }
 
-fn draw_tables(frame: &mut Frame, app: &mut App, area: Rect) {
-    let items: Vec<ListItem> = app
-        .tables
-        .iter()
-        .map(|t| ListItem::new(t.name.as_str()))
-        .collect();
+    fn draw_tables(&mut self, frame: &mut Frame, area: Rect) {
+        let items: Vec<ListItem> = self
+            .tables
+            .iter()
+            .map(|t| ListItem::new(t.name.as_str()))
+            .collect();
 
-    let block = Block::bordered()
-        .title("Tables")
-        .border_style(match app.focus {
-            Focus::Tables => Style::default().fg(Color::Yellow),
-            Focus::Rows => Style::default(),
-        });
+        let block = Block::bordered()
+            .title("Tables")
+            .border_style(match self.focus {
+                Focus::Tables => Style::default().fg(Color::Yellow),
+                Focus::Rows => Style::default(),
+            });
 
-    let list = List::new(items).block(block).highlight_symbol(">> ");
+        let list = List::new(items).block(block).highlight_symbol(">> ");
 
-    frame.render_stateful_widget(list, area, &mut app.tables_state);
-}
+        frame.render_stateful_widget(list, area, &mut self.tables_state);
+    }
 
-fn draw_rows(frame: &mut Frame, app: &mut App, area: Rect) {
-    // We get the row according to the selected table
-    let rows = app
-        .tables
-        .get(app.tables_state.selected().unwrap())
-        .map(|t| &t.rows)
-        .unwrap();
+    fn draw_rows(&mut self, frame: &mut Frame, area: Rect) {
+        // We get the row according to the selected table
+        let rows = self
+            .tables
+            .get(self.tables_state.selected().unwrap())
+            .map(|t| &t.rows)
+            .unwrap();
 
-    let items: Vec<ListItem> = rows.iter().map(|r| ListItem::new(r.as_str())).collect();
+        let items: Vec<ListItem> = rows.iter().map(|r| ListItem::new(r.as_str())).collect();
 
-    let block = Block::bordered()
-        .title("Rows")
-        .border_style(match app.focus {
-            Focus::Rows => Style::default().fg(Color::Yellow),
-            Focus::Tables => Style::default(),
-        });
+        let block = Block::bordered()
+            .title("Rows")
+            .border_style(match self.focus {
+                Focus::Rows => Style::default().fg(Color::Yellow),
+                Focus::Tables => Style::default(),
+            });
 
-    let list = List::new(items).block(block).highlight_symbol(">> ");
+        let list = List::new(items).block(block).highlight_symbol(">> ");
 
-    frame.render_stateful_widget(list, area, &mut app.rows_state);
+        frame.render_stateful_widget(list, area, &mut self.rows_state);
+    }
 }
