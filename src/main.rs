@@ -8,10 +8,10 @@ fn main() -> color_eyre::Result<()> {
     color_eyre::install()?;
 
     let root = DbNode::read_xml();
-    dbg!(root);
+    dbg!(&root);
 
     let terminal = ratatui::init();
-    let ret = App::default().run(terminal);
+    let ret = App::new(root).run(terminal);
     ratatui::restore();
 
     ret

@@ -1,3 +1,5 @@
+use xapidb_explorer::xapidb::parser::DbNode;
+
 use ratatui::{
     DefaultTerminal, Frame,
     crossterm::event::{self, Event, KeyCode, KeyEvent},
@@ -15,37 +17,18 @@ struct Table {
     name: String,
     rows: Vec<String>,
 }
+
 pub struct App {
     should_exit: bool,
-    tables: Vec<Table>,
+    root: DbNode,
     tables_state: ListState,
     rows_state: ListState,
     focus: Focus,
 }
 
-impl Default for App {
-    fn default() -> Self {
+impl App {
+    pub fn new(root: DbNode) -> Self {
         // https://docs.rs/ratatui/latest/ratatui/widgets/struct.List.html
-        let tables = vec![
-            Table {
-                name: "Table 1".to_string(),
-                rows: vec![
-                    "Tab1 Row 1".to_string(),
-                    "Tab1 Row 2".to_string(),
-                    "Tab1 Row 3".to_string(),
-                ],
-            },
-            Table {
-                name: "Table 2".to_string(),
-                rows: vec![
-                    "Tab2 Row 1".to_string(),
-                    "Tab2 Row 2".to_string(),
-                    "Tab2 Row 3".to_string(),
-                    "Tab2 Row 4".to_string(),
-                    "Tab2 Row 5".to_string(),
-                ],
-            },
-        ];
         let mut tables_state = ListState::default();
         tables_state.select(Some(0));
 
@@ -54,15 +37,13 @@ impl Default for App {
 
         Self {
             should_exit: false,
-            tables,
+            root,
             tables_state,
             rows_state,
             focus: Focus::Tables,
         }
     }
-}
 
-impl App {
     pub fn run(mut self, mut terminal: DefaultTerminal) -> color_eyre::Result<()> {
         while !self.should_exit {
             terminal.draw(|frame| self.draw(frame))?;
@@ -102,12 +83,7 @@ impl App {
                     self.rows_state.select(Some(0));
                 }
             }
-            Focus::Rows => {
-                let i = self.rows_state.selected().unwrap();
-                if i > 0 {
-                    self.rows_state.select(Some(i - 1));
-                }
-            }
+            Focus::Rows => todo!("Select row above"),
         }
     }
 
@@ -115,21 +91,12 @@ impl App {
         match self.focus {
             Focus::Tables => {
                 let i = self.tables_state.selected().unwrap();
-                if i < self.tables.len() {
+                if i < self.root.children.len() {
                     self.tables_state.select(Some(i + 1));
                     self.rows_state.select(Some(0));
                 }
             }
-            Focus::Rows => {
-                let i = self.rows_state.selected().unwrap();
-                let table = self
-                    .tables
-                    .get(self.tables_state.selected().unwrap())
-                    .unwrap();
-                if i < table.rows.len() {
-                    self.rows_state.select(Some(i + 1));
-                }
-            }
+            Focus::Rows => todo!("Select row below"),
         }
     }
 
@@ -146,9 +113,13 @@ impl App {
 
     fn draw_tables(&mut self, frame: &mut Frame, area: Rect) {
         let items: Vec<ListItem> = self
-            .tables
+            .root
+            .children
             .iter()
-            .map(|t| ListItem::new(t.name.as_str()))
+            .map(|c| {
+                let name = c.attributes.get("name").unwrap();
+                ListItem::new(name.as_str())
+            })
             .collect();
 
         let block = Block::bordered()
@@ -165,13 +136,13 @@ impl App {
 
     fn draw_rows(&mut self, frame: &mut Frame, area: Rect) {
         // We get the row according to the selected table
-        let rows = self
-            .tables
-            .get(self.tables_state.selected().unwrap())
-            .map(|t| &t.rows)
-            .unwrap();
+        // let rows = self
+        //     .tables
+        //     .get(self.tables_state.selected().unwrap())
+        //     .map(|t| &t.rows)
+        //     .unwrap();
 
-        let items: Vec<ListItem> = rows.iter().map(|r| ListItem::new(r.as_str())).collect();
+        let items: Vec<ListItem> = Vec::new();
 
         let block = Block::bordered()
             .title("Rows")
