@@ -138,8 +138,6 @@ impl DbNode {
             }
         }
 
-        println!("done");
-
         assert!(stack.len() == 1);
         let root = stack.pop().unwrap();
         root
