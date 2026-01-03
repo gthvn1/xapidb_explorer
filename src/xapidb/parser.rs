@@ -26,9 +26,7 @@ pub struct DbNode {
 }
 
 impl DbNode {
-    pub fn read_xml() -> DbNode {
-        let fname = "examples/xapi-db.xml";
-
+    pub fn read_xml(fname: &str) -> DbNode {
         let mut file = match File::open(fname) {
             Err(e) => panic!("failed to open {:?}: {}", fname, e),
             Ok(file) => file,
