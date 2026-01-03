@@ -144,7 +144,6 @@ impl DbNode {
 
         assert!(stack.len() == 1);
         let root = stack.pop().unwrap();
-        dbg!(&root);
         root
     }
 
