@@ -58,7 +58,8 @@ impl App {
 
     fn handle_key(&mut self, key: KeyEvent) -> color_eyre::Result<()> {
         match key.code {
-            KeyCode::Tab => self.toggle_focus(),
+            KeyCode::Tab | KeyCode::Right => self.toggle_focus_right(),
+            KeyCode::Left => self.toggle_focus_left(),
             KeyCode::Up => self.select_above(),
             KeyCode::Down => self.select_below(),
             KeyCode::Esc | KeyCode::Char('q') => self.should_exit = true,
@@ -68,7 +69,15 @@ impl App {
         Ok(())
     }
 
-    fn toggle_focus(&mut self) {
+    fn toggle_focus_left(&mut self) {
+        self.focus = match self.focus {
+            Focus::Tables => Focus::Attributes,
+            Focus::Rows => Focus::Tables,
+            Focus::Attributes => Focus::Rows,
+        };
+    }
+
+    fn toggle_focus_right(&mut self) {
         self.focus = match self.focus {
             Focus::Tables => Focus::Rows,
             Focus::Rows => Focus::Attributes,
@@ -173,28 +182,19 @@ impl App {
 
     fn draw_attrs(&mut self, frame: &mut Frame, area: Rect) {
         // We get rows according to the selected table
-        let table_index = match self.tables_state.selected() {
-            Some(i) => i,
-            None => return,
-        };
+        let attrs: Vec<(&String, &String)> = self
+            .tables_state
+            .selected() // return an optional usize that is the index in children
+            .and_then(|table_index| self.root.children.get(table_index))
+            .and_then(|row| {
+                self.rows_state
+                    .selected()
+                    .and_then(|row_idx| row.children.get(row_idx))
+            })
+            .map(|row| row.attributes.iter().collect())
+            .unwrap_or_default();
 
-        let rows = match self.root.children.get(table_index) {
-            Some(t) => &t.children,
-            None => return,
-        };
-
-        let row_index = match self.rows_state.selected() {
-            Some(i) => i,
-            None => return,
-        };
-
-        let row = match rows.get(row_index) {
-            Some(r) => r,
-            None => return,
-        };
-
-        let items: Vec<ListItem> = row
-            .attributes
+        let items: Vec<ListItem> = attrs
             .iter()
             .map(|(key, value)| ListItem::new(format!("{key}:{value}")))
             .collect();
