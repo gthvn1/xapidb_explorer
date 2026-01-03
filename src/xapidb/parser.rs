@@ -148,6 +148,21 @@ impl DbNode {
         root
     }
 
+    // It returns the name of the DbNode that can be either a name found in
+    // attributes if it is a "row" or the name in case of table that doesn't have
+    // name in attributes.
+    pub fn get_name(&self) -> String {
+        if let Some(name) = self.attributes.get("name") {
+            name.to_string()
+        } else if let Some(name) = self.attributes.get("name__label") {
+            name.to_string()
+        } else if let Some(name) = self.attributes.get("ref") {
+            name.to_string()
+        } else {
+            self.name.to_string()
+        }
+    }
+
     pub fn print_tree(&self) {
         for (idx, child) in self.children.iter().enumerate() {
             // Check if there is a name in attributes

@@ -159,10 +159,7 @@ impl App {
 
         // TODO: currently we just print the name that is "row" for all rows.
         //       Find a better way to print rows.
-        let items: Vec<ListItem> = rows
-            .iter()
-            .map(|r| ListItem::new(r.name.as_str()))
-            .collect();
+        let items: Vec<ListItem> = rows.iter().map(|r| ListItem::new(r.get_name())).collect();
 
         let block = Block::bordered()
             .title("Rows")
