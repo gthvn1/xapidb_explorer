@@ -114,8 +114,8 @@ impl App {
         let chunks = Layout::default()
             .direction(Direction::Horizontal)
             .constraints([
-                Constraint::Percentage(30), // table
-                Constraint::Percentage(30), // row
+                Constraint::Percentage(20), // table
+                Constraint::Percentage(40), // row
                 Constraint::Percentage(40), // attributes
             ])
             .split(area);
@@ -149,7 +149,7 @@ impl App {
     }
 
     fn draw_rows(&mut self, frame: &mut Frame, area: Rect) {
-        // We get the row according to the selected table
+        // We get rows according to the selected table
         let rows = self
             .root
             .children
@@ -157,8 +157,6 @@ impl App {
             .map(|c| &c.children)
             .unwrap();
 
-        // TODO: currently we just print the name that is "row" for all rows.
-        //       Find a better way to print rows.
         let items: Vec<ListItem> = rows.iter().map(|r| ListItem::new(r.get_name())).collect();
 
         let block = Block::bordered()
@@ -174,8 +172,32 @@ impl App {
     }
 
     fn draw_attrs(&mut self, frame: &mut Frame, area: Rect) {
-        // TODO: get attributes
-        let items: Vec<ListItem> = Vec::new();
+        // We get rows according to the selected table
+        let table_index = match self.tables_state.selected() {
+            Some(i) => i,
+            None => return,
+        };
+
+        let rows = match self.root.children.get(table_index) {
+            Some(t) => &t.children,
+            None => return,
+        };
+
+        let row_index = match self.rows_state.selected() {
+            Some(i) => i,
+            None => return,
+        };
+
+        let row = match rows.get(row_index) {
+            Some(r) => r,
+            None => return,
+        };
+
+        let items: Vec<ListItem> = row
+            .attributes
+            .iter()
+            .map(|(key, value)| ListItem::new(format!("{key}:{value}")))
+            .collect();
 
         let block = Block::bordered()
             .title("Attributes")
