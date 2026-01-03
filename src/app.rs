@@ -11,11 +11,7 @@ use ratatui::{
 enum Focus {
     Tables,
     Rows,
-}
-
-struct Table {
-    name: String,
-    rows: Vec<String>,
+    Attributes,
 }
 
 pub struct App {
@@ -23,6 +19,7 @@ pub struct App {
     root: DbNode,
     tables_state: ListState,
     rows_state: ListState,
+    attrs_state: ListState,
     focus: Focus,
 }
 
@@ -35,11 +32,15 @@ impl App {
         let mut rows_state = ListState::default();
         rows_state.select(Some(0));
 
+        let mut attrs_state = ListState::default();
+        attrs_state.select(Some(0));
+
         Self {
             should_exit: false,
             root,
             tables_state,
             rows_state,
+            attrs_state,
             focus: Focus::Tables,
         }
     }
@@ -70,7 +71,8 @@ impl App {
     fn toggle_focus(&mut self) {
         self.focus = match self.focus {
             Focus::Tables => Focus::Rows,
-            Focus::Rows => Focus::Tables,
+            Focus::Rows => Focus::Attributes,
+            Focus::Attributes => Focus::Tables,
         };
     }
 
@@ -84,6 +86,7 @@ impl App {
                 }
             }
             Focus::Rows => todo!("Select row above"),
+            Focus::Attributes => todo!("Select attribute above"),
         }
     }
 
@@ -97,6 +100,7 @@ impl App {
                 }
             }
             Focus::Rows => todo!("Select row below"),
+            Focus::Attributes => todo!("Select attribute below"),
         }
     }
 
@@ -104,11 +108,16 @@ impl App {
         let area = frame.area();
         let chunks = Layout::default()
             .direction(Direction::Horizontal)
-            .constraints([Constraint::Percentage(30), Constraint::Percentage(70)])
+            .constraints([
+                Constraint::Percentage(30), // table
+                Constraint::Percentage(30), // row
+                Constraint::Percentage(40), // attributes
+            ])
             .split(area);
 
         self.draw_tables(frame, chunks[0]);
         self.draw_rows(frame, chunks[1]);
+        self.draw_attrs(frame, chunks[2]);
     }
 
     fn draw_tables(&mut self, frame: &mut Frame, area: Rect) {
@@ -126,7 +135,7 @@ impl App {
             .title("Tables")
             .border_style(match self.focus {
                 Focus::Tables => Style::default().fg(Color::Yellow),
-                Focus::Rows => Style::default(),
+                Focus::Rows | Focus::Attributes => Style::default(),
             });
 
         let list = List::new(items).block(block).highlight_symbol(">> ");
@@ -154,11 +163,26 @@ impl App {
             .title("Rows")
             .border_style(match self.focus {
                 Focus::Rows => Style::default().fg(Color::Yellow),
-                Focus::Tables => Style::default(),
+                Focus::Tables | Focus::Attributes => Style::default(),
             });
 
         let list = List::new(items).block(block).highlight_symbol(">> ");
 
         frame.render_stateful_widget(list, area, &mut self.rows_state);
+    }
+
+    fn draw_attrs(&mut self, frame: &mut Frame, area: Rect) {
+        // TODO: get attributes
+        let items: Vec<ListItem> = Vec::new();
+
+        let block = Block::bordered()
+            .title("Attributes")
+            .border_style(match self.focus {
+                Focus::Attributes => Style::default().fg(Color::Yellow),
+                Focus::Tables | Focus::Rows => Style::default(),
+            });
+
+        let list = List::new(items).block(block).highlight_symbol(">> ");
+        frame.render_stateful_widget(list, area, &mut self.attrs_state);
     }
 }
