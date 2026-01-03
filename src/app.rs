@@ -69,9 +69,23 @@ impl App {
         Ok(())
     }
 
+    fn selected_table_has_children(&self) -> bool {
+        if let Some(table_idx) = self.tables_state.selected() {
+            let table = self.root.children.get(table_idx).unwrap();
+            table.has_children()
+        } else {
+            false
+        }
+    }
     fn toggle_focus_left(&mut self) {
         self.focus = match self.focus {
-            Focus::Tables => Focus::Attributes,
+            Focus::Tables => {
+                if self.selected_table_has_children() {
+                    Focus::Rows
+                } else {
+                    Focus::Tables
+                }
+            }
             Focus::Rows => Focus::Tables,
             Focus::Attributes => Focus::Rows,
         };
@@ -79,7 +93,13 @@ impl App {
 
     fn toggle_focus_right(&mut self) {
         self.focus = match self.focus {
-            Focus::Tables => Focus::Rows,
+            Focus::Tables => {
+                if self.selected_table_has_children() {
+                    Focus::Rows
+                } else {
+                    Focus::Tables
+                }
+            }
             Focus::Rows => Focus::Attributes,
             Focus::Attributes => Focus::Tables,
         };

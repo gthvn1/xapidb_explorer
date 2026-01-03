@@ -148,6 +148,10 @@ impl DbNode {
         root
     }
 
+    pub fn has_children(&self) -> bool {
+        !self.children.is_empty()
+    }
+
     // It returns the name of the DbNode that can be either a name found in
     // attributes if it is a "row" or the name in case of table that doesn't have
     // name in attributes.
