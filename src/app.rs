@@ -80,10 +80,13 @@ impl App {
         match self.focus {
             Focus::Tables => {
                 let i = self.tables_state.selected().unwrap();
-                if i > 0 {
+                if i == 0 {
+                    let last = self.root.children.len();
+                    self.tables_state.select(Some(last - 1));
+                } else {
                     self.tables_state.select(Some(i - 1));
-                    self.rows_state.select(Some(0));
                 }
+                self.rows_state.select(Some(0));
             }
             Focus::Rows => todo!("Select row above"),
             Focus::Attributes => todo!("Select attribute above"),
@@ -94,10 +97,12 @@ impl App {
         match self.focus {
             Focus::Tables => {
                 let i = self.tables_state.selected().unwrap();
-                if i < self.root.children.len() {
+                if i == self.root.children.len() - 1 {
+                    self.tables_state.select(Some(0));
+                } else {
                     self.tables_state.select(Some(i + 1));
-                    self.rows_state.select(Some(0));
                 }
+                self.rows_state.select(Some(0));
             }
             Focus::Rows => todo!("Select row below"),
             Focus::Attributes => todo!("Select attribute below"),
