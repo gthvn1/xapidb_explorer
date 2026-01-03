@@ -89,6 +89,7 @@ impl App {
         match self.focus {
             Focus::Tables => {
                 let i = self.tables_state.selected().unwrap();
+                // Wrap around to the last table if at the top
                 if i == 0 {
                     let last = self.root.children.len();
                     self.tables_state.select(Some(last - 1));
@@ -106,6 +107,7 @@ impl App {
         match self.focus {
             Focus::Tables => {
                 let i = self.tables_state.selected().unwrap();
+                // Wrap around to the first table if at the bottom
                 if i == self.root.children.len() - 1 {
                     self.tables_state.select(Some(0));
                 } else {
@@ -139,10 +141,7 @@ impl App {
             .root
             .children
             .iter()
-            .map(|c| {
-                let name = c.attributes.get("name").unwrap();
-                ListItem::new(name.as_str())
-            })
+            .map(|row| ListItem::new(row.get_name()))
             .collect();
 
         let block = Block::bordered()
@@ -163,10 +162,13 @@ impl App {
             .root
             .children
             .get(self.tables_state.selected().unwrap())
-            .map(|c| &c.children)
+            .map(|row| &row.children)
             .unwrap();
 
-        let items: Vec<ListItem> = rows.iter().map(|r| ListItem::new(r.get_name())).collect();
+        let items: Vec<ListItem> = rows
+            .iter()
+            .map(|row| ListItem::new(row.get_name()))
+            .collect();
 
         let block = Block::bordered()
             .title("Rows")
