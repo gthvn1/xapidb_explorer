@@ -5,13 +5,19 @@ use app::App;
 
 use xapidb_explorer::xapidb::parser::DbNode;
 
+struct TerminalDefer;
+impl Drop for TerminalDefer {
+    fn drop(&mut self) {
+        ratatui::restore()
+    }
+}
+
 fn main() -> color_eyre::Result<()> {
     color_eyre::install()?;
     let terminal = ratatui::init();
-    let filename = args::get();
-    let root = DbNode::read_xml(&filename);
-    let ret = App::new(root).run(terminal);
-    ratatui::restore();
+    let _defer = TerminalDefer;
 
-    ret
+    let filename = args::get()?;
+    let root = DbNode::read_xml(&filename);
+    App::new(root).run(terminal)
 }

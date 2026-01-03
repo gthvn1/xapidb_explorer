@@ -1,11 +1,10 @@
-pub fn get() -> String {
+pub fn get() -> color_eyre::Result<String> {
     // We are just expecting a filename for now
     let args: Vec<String> = std::env::args().collect();
 
     if args.len() < 2 {
-        println!("A filename is expected");
-        std::process::exit(1);
+        color_eyre::eyre::bail!("A filename is expected");
     }
 
-    args[1].to_owned()
+    Ok(args[1].to_owned())
 }
