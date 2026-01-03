@@ -98,7 +98,17 @@ impl App {
                 }
                 self.rows_state.select(Some(0));
             }
-            Focus::Rows => todo!("Select row above"),
+            Focus::Rows => {
+                let i = self.rows_state.selected().unwrap();
+                // Wrap around to the last row if at the top
+                if i == 0 {
+                    let table_idx = self.tables_state.selected().unwrap();
+                    let row_len = self.root.children[table_idx].children.len();
+                    self.rows_state.select(Some(row_len - 1));
+                } else {
+                    self.rows_state.select(Some(i - 1));
+                }
+            }
             Focus::Attributes => todo!("Select attribute above"),
         }
     }
@@ -115,7 +125,17 @@ impl App {
                 }
                 self.rows_state.select(Some(0));
             }
-            Focus::Rows => todo!("Select row below"),
+            Focus::Rows => {
+                let i = self.rows_state.selected().unwrap();
+                // Wrap around to the first row if at the bottom
+                let table_idx = self.tables_state.selected().unwrap();
+                let row_len = self.root.children[table_idx].children.len();
+                if i == row_len - 1 {
+                    self.rows_state.select(Some(0));
+                } else {
+                    self.rows_state.select(Some(i + 1));
+                }
+            }
             Focus::Attributes => todo!("Select attribute below"),
         }
     }
