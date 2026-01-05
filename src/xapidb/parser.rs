@@ -138,9 +138,9 @@ impl DbNode {
             }
         }
 
+        // If everything goes well the root is the last node in the stack.
         assert!(stack.len() == 1);
-        let root = stack.pop().unwrap();
-        root
+        stack.pop().unwrap()
     }
 
     pub fn has_children(&self) -> bool {
