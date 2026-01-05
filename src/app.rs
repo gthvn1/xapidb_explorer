@@ -14,13 +14,25 @@ enum Focus {
     Attributes,
 }
 
+enum Mode {
+    Normal,
+    Search,
+}
+
 pub struct App {
     should_exit: bool,
     root: DbNode,
+
     tables_state: ListState,
     rows_state: ListState,
     attrs_state: ListState,
+
+    // Allow selection of tables, rows and attributes
     focus: Focus,
+
+    // Search
+    mode: Mode,
+    search_query: String,
 }
 
 impl App {
@@ -42,6 +54,8 @@ impl App {
             rows_state,
             attrs_state,
             focus: Focus::Tables,
+            mode: Mode::Normal,
+            search_query: String::new(),
         }
     }
 
@@ -57,16 +71,36 @@ impl App {
     }
 
     fn handle_key(&mut self, key: KeyEvent) -> color_eyre::Result<()> {
-        match key.code {
-            KeyCode::Tab | KeyCode::Right => self.toggle_focus_right(),
-            KeyCode::Left => self.toggle_focus_left(),
-            KeyCode::Up => self.select_above(),
-            KeyCode::Down => self.select_below(),
-            KeyCode::Esc | KeyCode::Char('q') => self.should_exit = true,
-            _ => todo!("handle key"),
+        match self.mode {
+            Mode::Normal => {
+                match key.code {
+                    KeyCode::Char('/') => self.switch_mode(),
+                    KeyCode::Tab | KeyCode::Right => self.toggle_focus_right(),
+                    KeyCode::Left => self.toggle_focus_left(),
+                    KeyCode::Up => self.select_above(),
+                    KeyCode::Down => self.select_below(),
+                    KeyCode::Esc | KeyCode::Char('q') => self.should_exit = true,
+                    _ => todo!("handle key in normal mode"),
+                }
+            }
+            Mode::Search => {
+                match key.code {
+                    KeyCode::Esc => self.switch_mode(),
+                    _ => todo!("handle key in search mode"),
+                }
+            }
         }
 
         Ok(())
+    }
+
+    fn switch_mode(&mut self) {
+        // Reset query string and switch mode
+        self.search_query.clear();
+        self.mode = match self.mode {
+            Mode::Normal => Mode::Search,
+            Mode::Search => Mode::Normal,
+        }
     }
 
     fn selected_table_has_children(&self) -> bool {
